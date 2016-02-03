@@ -245,6 +245,7 @@ int underworld_tempo[] = {
  //char button2_pushed = LOW;
  //char button3_pushed = LOW;
  //char button4_pushed = LOW;
+ int button_pushed = 0;
 void setup()
 {
  Wire.begin();
@@ -333,11 +334,13 @@ char check_button(){
   char but4 = LOW;
  //for (int i = 1; i < 2; i++;){ 
 //}
+  //Serial.print(button1);
   if (digitalRead(button1) == HIGH){
-    delay(20);
+    delay(100);
     if (digitalRead(button1) == HIGH){
        return 1;
     }
+    else return 0;
   }
   else {
     return 0;
@@ -475,7 +478,7 @@ void loop()
   int current_time = displayTime();
   do{
     current_time = displayTime();
-    button1_pushed = digitalRead(button1);
+    button_pushed = check_button();
     //button2_pushed = digitalRead(button2);
     //button3_pushed = digitalRead(button3);
     //button4_pushed = digitalRead(button4);
@@ -483,18 +486,18 @@ void loop()
     Serial.print("current time: ");
     Serial.println(current_time);
     Serial.println(timer_start1);
-    
-    Serial.print(button1_pushed);
+    Serial.println(button_pushed);
+    //Serial.print(button1_pushed);
     //Serial.print(current_time);
     //current_time = displayTime();
     //Serial.print("\n");
     
   //} while(button1_pushed == LOW && button2_pushed == LOW && button3_pushed == LOW && button4_pushed == LOW)//no button pushes
-  } while(button1_pushed == LOW);//no button pushes
+  } while(button_pushed == 0);//no button pushes
 
   
 
-  if (button1_pushed == HIGH){
+  if (button_pushed == 1){
     Serial.print("button1 pushed");
     if (timer_start1 == 0 && current_time != 0){//not started yet
       Serial.print("Timer 1 Started\n");
