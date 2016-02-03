@@ -34,9 +34,9 @@ const int timer1 = 2; //2 mins
 
 const int buzzPin = 12;  //buzzer is plugged in here
 
-//const int led1 = 7;
-//const int led2 = 8;
-//const int led3 = 9;
+const int LEDRED = 11;
+const int LEDBLUE = 9;
+const int LEDGREEN = 10;
 //const int led4 = 10;
 
 
@@ -263,6 +263,10 @@ void setup()
  //pinMode(led3, OUTPUT);
  //pinMode(led4, OUTPUT);
 
+ pinMode(LEDRED, OUTPUT);
+ pinMode(LEDBLUE, OUTPUT);
+ pinMode(LEDGREEN, OUTPUT);
+
  
 
 
@@ -336,17 +340,27 @@ char check_button(){
 //}
   //Serial.print(button1);
   if (digitalRead(button1) == HIGH){
-    delay(100);
+    delay(200);
     if (digitalRead(button1) == HIGH){
        return 1;
     }
-    else return 0;
+    else {
+      delay(200);
+      return 0;
+    }
   }
   else {
     return 0;
   }
 
   
+}
+
+void color (unsigned char red, unsigned char green, unsigned char blue)     // the color generating function  
+{    
+          analogWrite(LEDRED, red);   
+          analogWrite(LEDBLUE, blue); 
+          analogWrite(LEDGREEN, green); 
 }
 
 void check_timers(int current_time, int end_timer1){
@@ -369,8 +383,10 @@ void check_timers(int current_time, int end_timer1){
 if ((current_time >= end_timer1) && end_timer1 != timer1){
   //make led light up
   Serial.print("Timer 1 is up!\n");
+  color(255,0,0);
   end_timer1 = 0;
   make_buzz(1);
+  color(0,0,0);
 }
  
 }
@@ -501,6 +517,7 @@ void loop()
     Serial.print("button1 pushed");
     if (timer_start1 == 0 && current_time != 0){//not started yet
       Serial.print("Timer 1 Started\n");
+      color(128,0,128);
       Serial.println(current_time);
       timer_start1 = current_time; 
     }
@@ -510,6 +527,7 @@ void loop()
     }
     else{
       Serial.print("Timer 1 Stopped\n");
+      color(0,0,0);
       timer_start1 =0;   //stop alarm
     }
   }
