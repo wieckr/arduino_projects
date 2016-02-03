@@ -24,12 +24,12 @@ byte bcdToDec(byte val)
 const int button1 = 3;   //Washer
 //const int buttonPin = 3;
 const int button2 = 8;   //Dryer
-//const int button3 = 5;   //Dishwasher
+const int button3 = 7;   //Dishwasher
 //const int button4 = 6;   //1 hour timer
 
 const int timer1 = 2; //2 mins
 const int timer2 = 2; 
-//const int timer3 = 60;
+const int timer3 = 2;
 //const int timer4 = 60;
 
 const int buzzPin = 12;  //buzzer is plugged in here
@@ -37,7 +37,7 @@ const int buzzPin = 12;  //buzzer is plugged in here
 const int LEDRED = 11;
 const int LEDBLUE = 9;
 const int LEDGREEN = 10;
-//const int led4 = 10;
+
 
 
 /*************************************************
@@ -237,7 +237,7 @@ int underworld_tempo[] = {
 
  int timer_start1 = 0;
  int timer_start2 = 0;
- //int timer_start3 = 0;
+ int timer_start3 = 0;
  //int timer_start4 = 0;
  //int current_time = 0;
 
@@ -255,7 +255,7 @@ void setup()
  Serial.begin(9600);
  pinMode(button1, INPUT);
  pinMode(button2, INPUT);
- //pinMode(button3, INPUT);
+ pinMode(button3, INPUT);
  //pinMode(button4, INPUT);
  pinMode(buzzPin, OUTPUT);
 
@@ -354,6 +354,16 @@ char check_button(){
       delay(200);
       return 0;
     }
+  }
+  else if (digitalRead(button3) == HIGH){
+    delay(200);
+    if (digitalRead(button3) == HIGH){
+       return 3;
+    }
+    else {
+      delay(200);
+      return 0;
+    }
   }  
   else {
     return 0;
@@ -369,7 +379,7 @@ void color (unsigned char red, unsigned char green, unsigned char blue)     // t
           analogWrite(LEDGREEN, green); 
 }
 
-void check_timers(int current_time, int end_timer1, int end_timer2){
+void check_timers(int current_time, int end_timer1, int end_timer2, int end_timer3){
 /**************************************
  * Checks if any timers are done
  * Returns number of timer if complete
@@ -398,8 +408,16 @@ else if ((current_time >= end_timer2) && end_timer2 != timer2){
   //make led light up
   Serial.print("Timer 2 is up!\n");
   color(0,0,255); //Blue
-  end_timer1 = 0;
+  end_timer2 = 0;
   make_buzz(2);
+  color(0,0,0);
+}
+else if ((current_time >= end_timer3) && end_timer3 != timer3){
+  //make led light up
+  Serial.print("Timer 3 is up!\n");
+  color(255,255,255); //White
+  end_timer3 = 0;
+  make_buzz(3);
   color(0,0,0);
 }
  
@@ -434,7 +452,7 @@ int sing(int s) {
     Serial.println(" 'Underworld Theme'");
     int size = sizeof(underworld_melody) / sizeof(int);
     for (int thisNote = 0; thisNote < size; thisNote++) {
-      if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH){
+      if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH || digitalRead(button3) == HIGH){
         Serial.println("stopped alarm");
         return 1; 
       }
@@ -461,7 +479,7 @@ int sing(int s) {
     Serial.println(" 'Mario Theme'");
     int size = sizeof(melody) / sizeof(int);
     for (int thisNote = 0; thisNote < size; thisNote++) {
-       if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH){
+       if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH || digitalRead(button3) == HIGH){
         Serial.println("stopped alarm");
         return 1; 
       }
@@ -512,7 +530,7 @@ void loop()
     //button2_pushed = digitalRead(button2);
     //button3_pushed = digitalRead(button3);
     //button4_pushed = digitalRead(button4);
-    check_timers(current_time, timer_start1+timer1, timer_start2+timer2);
+    check_timers(current_time, timer_start1+timer1, timer_start2+timer2, timer_start3+timer3);
     Serial.print("current time: ");
     Serial.println(current_time);
     Serial.println(timer_start1);
@@ -532,11 +550,11 @@ void loop()
     if (timer_start1 == 0 && current_time != 0){//not started yet
       Serial.print("Timer 1 Started\n");
       color(255,0,0); //RED
-      Serial.println(current_time);
       timer_start1 = current_time; 
     }
     else if (timer_start1 == 0 && current_time == 0) {//midnight and started
       Serial.print("Timer 1 Started Midnight \n");
+      color(255,0,0);
       timer_start1 = current_time;
     }
     else{
@@ -550,17 +568,35 @@ void loop()
     if (timer_start2 == 0 && current_time != 0){//not started yet
       Serial.print("Timer 2 Started\n");
       color(0,0,255); //Blue
-      Serial.println(current_time);
       timer_start2 = current_time; 
     }
     else if (timer_start2 == 0 && current_time == 0) {//midnight and started
       Serial.print("Timer 2 Started Midnight \n");
+      color(0,0,255);
       timer_start2 = current_time;
     }
     else{
       Serial.print("Timer 2 Stopped\n");
       color(0,0,0);
       timer_start2 =0;   //stop alarm
+    }
+  }
+  if (button_pushed == 3){
+    Serial.print("button3 pushed");
+    if (timer_start3 == 0 && current_time != 0){//not started yet
+      Serial.print("Timer 3 Started\n");
+      color(255,255,255); //White
+      timer_start3 = current_time; 
+    }
+    else if (timer_start3 == 0 && current_time == 0) {//midnight and started
+      Serial.print("Timer 3 Started Midnight \n");
+      color(255,255,255);
+      timer_start3 = current_time;
+    }
+    else{
+      Serial.print("Timer 3 Stopped\n");
+      color(0,0,0);
+      timer_start3 =0;   //stop alarm
     }
   }
   /*
