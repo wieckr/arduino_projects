@@ -1,37 +1,33 @@
-//4 Button Timer
+//3 Button Timer
 /********************************
-There are 4 buttons with separate timers.  1 push to start the timer for the event, 
-double tap to stop the alarm (before or after it goes off). 
-An LED goes off as well as a buzzer melody for the alarm.
+There are 3 buttons with separate timers.  1 push to start the timer for the event,
+hold to stop the alarm (before or after it goes off).
+An RGB LED goes off as well as a buzzer melody for the alarm.
 
-Requires RTC module, 4 buttons, 4 LEDs, 1 buzzer, various resistors, breadboard
+Requires RTC module, 3 buttons, 1 RGB LED, 1 buzzer, various resistors, breadboard/protoboard, jumper wires
 *********************************/
-
 
 #include "Wire.h"
 #define DS3231_I2C_ADDRESS 0x68
 // Convert normal decimal numbers to binary coded decimal
 byte decToBcd(byte val)
 {
-  return( (val/10*16) + (val%10) );
+  return ( (val / 10 * 16) + (val % 10) );
 }
 // Convert binary coded decimal to normal decimal numbers
 byte bcdToDec(byte val)
 {
-  return( (val/16*10) + (val%16) );
+  return ( (val / 16 * 10) + (val % 16) );
 }
 
-const int button1 = 3;   //Washer Red 
-//const int buttonPin = 3;
+const int button1 = 3;   //Washer Red
 const int button2 = 8;   //Dryer Blue
-const int button3 = 7;   //Dishwasher White 
-//const int button4 = 6;   //1 hour timer
+const int button3 = 7;   //Dishwasher White
 
 //These are the time thresholds
 const int timer1 = 77; //dryer
 const int timer2 = 40; //washer
 const int timer3 = 10;
-//const int timer4 = 60;
 
 const int buzzPin = 12;  //buzzer is plugged in here
 
@@ -40,9 +36,8 @@ const int LEDBLUE = 11;
 const int LEDGREEN = 10;
 
 
-
 /*************************************************
- * Public Constants 
+ * Public Constants
  * Notes for Buzz Song
  *************************************************/
 
@@ -235,43 +230,31 @@ int underworld_tempo[] = {
   10, 10, 10,
   3, 3, 3
 };
-
- int timer_start1 = 0;
- int timer_start2 = 0;
- int timer_start3 = 0;
- //int timer_start4 = 0;
- //int current_time = 0;
-
- char button1_pushed = LOW;
- char button2_pushed = LOW;
- //char button3_pushed = LOW;
- //char button4_pushed = LOW;
- int button_pushed = 0;
+//initial settings for minutes since midnight that timers start
+int timer_start1 = 0;
+int timer_start2 = 0;
+int timer_start3 = 0;
+int button_pushed = 0;
 void setup()
 {
- Wire.begin();
- // set the initial time here:
- // DS3231 seconds, minutes, hours, day, date, month, year
- // setDS3231time(00,53,19,2,14,12,15);
- Serial.begin(9600);
- pinMode(button1, INPUT);
- pinMode(button2, INPUT);
- pinMode(button3, INPUT);
- //pinMode(button4, INPUT);
- pinMode(buzzPin, OUTPUT);
+  Wire.begin();
+  // set the initial time here:
+  // DS3231 seconds, minutes, hours, day, date, month, year
+  // setDS3231time(00,53,19,2,14,12,15);
+  Serial.begin(9600);
+  pinMode(button1, INPUT);
+  pinMode(button2, INPUT);
+  pinMode(button3, INPUT);
+  pinMode(buzzPin, OUTPUT);
 
- pinMode(LEDRED, OUTPUT);
- pinMode(LEDBLUE, OUTPUT);
- pinMode(LEDGREEN, OUTPUT);
-
- 
-
-
+  pinMode(LEDRED, OUTPUT);
+  pinMode(LEDBLUE, OUTPUT);
+  pinMode(LEDGREEN, OUTPUT);
 
 }
 
 void setDS3231time(byte second, byte minute, byte hour, byte dayOfWeek, byte
-dayOfMonth, byte month, byte year)
+                   dayOfMonth, byte month, byte year)
 {
   // sets time and date data to DS3231
   Wire.beginTransmission(DS3231_I2C_ADDRESS);
@@ -286,12 +269,12 @@ dayOfMonth, byte month, byte year)
   Wire.endTransmission();
 }
 void readDS3231time(byte *second,
-byte *minute,
-byte *hour,
-byte *dayOfWeek,
-byte *dayOfMonth,
-byte *month,
-byte *year)
+                    byte *minute,
+                    byte *hour,
+                    byte *dayOfWeek,
+                    byte *dayOfMonth,
+                    byte *month,
+                    byte *year)
 {
   Wire.beginTransmission(DS3231_I2C_ADDRESS);
   Wire.write(0); // set DS3231 register pointer to 00h
@@ -311,135 +294,115 @@ int displayTime()
   byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
   // retrieve data from DS3231
   readDS3231time(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month,
-  &year);
+                 &year);
   // send it to the serial monitor
   Serial.print(hour, DEC);
   // convert the byte variable to a decimal number when displayed
   Serial.print(":");
-  if (minute<10)
+  if (minute < 10)
   {
     Serial.print("0");
   }
   Serial.print(minute, DEC);
   Serial.print("\n");
-  Serial.print(hour*60 + minute);
-
-  return (hour*60 + minute);
- 
+  Serial.print(hour * 60 + minute);
+  return (hour * 60 + minute);
 }
 
-char check_button(){
+char check_button() {
   char but1 = LOW;
   char but2 = LOW;
   char but3 = LOW;
   char but4 = LOW;
- //for (int i = 1; i < 2; i++;){ 
-//}
-  //Serial.print(button1);
-  if (digitalRead(button1) == HIGH){
+
+  if (digitalRead(button1) == HIGH) {
     delay(200);
-    if (digitalRead(button1) == HIGH){
-       return 1;
+    if (digitalRead(button1) == HIGH) {
+      return 1;
     }
     else {
       delay(200);
       return 0;
     }
   }
-  else if (digitalRead(button2) == HIGH){
+  else if (digitalRead(button2) == HIGH) {
     delay(200);
-    if (digitalRead(button2) == HIGH){
-       return 2;
+    if (digitalRead(button2) == HIGH) {
+      return 2;
     }
     else {
       delay(200);
       return 0;
     }
   }
-  else if (digitalRead(button3) == HIGH){
+  else if (digitalRead(button3) == HIGH) {
     delay(200);
-    if (digitalRead(button3) == HIGH){
-       return 3;
+    if (digitalRead(button3) == HIGH) {
+      return 3;
     }
     else {
       delay(200);
       return 0;
     }
-  }  
+  }
   else {
     return 0;
   }
-
-  
 }
 
-void color (unsigned char red, unsigned char green, unsigned char blue)     // the color generating function  
-{    
-          analogWrite(LEDRED, red);   
-          analogWrite(LEDBLUE, blue); 
-          analogWrite(LEDGREEN, green); 
+void color (unsigned char red, unsigned char green, unsigned char blue)     // the color generating function
+{
+  analogWrite(LEDRED, red);
+  analogWrite(LEDBLUE, blue);
+  analogWrite(LEDGREEN, green);
 }
 
-void check_timers(int current_time, int end_timer1, int end_timer2, int end_timer3){
-/**************************************
- * Checks if any timers are done
- * Returns number of timer if complete
- * INPUT: start timers for all 4 timers
- * RETURNS: Number of done timer, otherwise 0
- *************************************/
- //Serial.print("Current time: ");
- //Serial.print(current_time);
- //Serial.print("\ntimer1: ");
- Serial.print("\nend timer: ");
- Serial.println(end_timer1);
- Serial.print("end of end timer\n");
- //Serial.print("\ntimer start: ");
- 
- 
- //Serial.print(timer_start1);
-if ((current_time >= end_timer1) && end_timer1 != timer1){
-  //make led light up
-  Serial.print("Timer 1 is up!\n");
-  color(255,0,0); //RED
-  end_timer1 = 0;
-  make_buzz(1);
-  color(0,0,0);
-}
-else if ((current_time >= end_timer2) && end_timer2 != timer2){
-  //make led light up
-  Serial.print("Timer 2 is up!\n");
-  color(0,0,255); //Blue
-  end_timer2 = 0;
-  make_buzz(2);
-  color(0,0,0);
-}
-else if ((current_time >= end_timer3) && end_timer3 != timer3){
-  //make led light up
-  Serial.print("Timer 3 is up!\n");
-  color(255,255,255); //White
-  end_timer3 = 0;
-  make_buzz(3);
-  color(0,0,0);
-}
- 
-}
-void start_timer(int time_length, int timer_num){
-  
+void check_timers(int current_time, int end_timer1, int end_timer2, int end_timer3) {
+  /**************************************
+   * Checks if any timers are done
+   * Returns number of timer if complete
+   * INPUT: start timers for all 4 timers
+   * RETURNS: Number of done timer, otherwise 0
+   *************************************/
+
+  Serial.print("\nend timer: ");
+  Serial.println(end_timer1);
+  Serial.print("end of end timer\n");
+
+  if ((current_time >= end_timer1) && end_timer1 != timer1) {
+    //make led light up
+    Serial.print("Timer 1 is up!\n");
+    color(255, 0, 0); //RED
+    end_timer1 = 0;
+    make_buzz(1);
+    color(0, 0, 0);
+  }
+  else if ((current_time >= end_timer2) && end_timer2 != timer2) {
+    //make led light up
+    Serial.print("Timer 2 is up!\n");
+    color(0, 0, 255); //Blue
+    end_timer2 = 0;
+    make_buzz(2);
+    color(0, 0, 0);
+  }
+  else if ((current_time >= end_timer3) && end_timer3 != timer3) {
+    //make led light up
+    Serial.print("Timer 3 is up!\n");
+    color(255, 255, 255); //White
+    end_timer3 = 0;
+    make_buzz(3);
+    color(0, 0, 0);
+  }
 }
 
-
-
-void make_buzz(int button){
+void make_buzz(int button) {
   //spit out buzz noise until button is pushed, then return if pushed.
   int finished = 0;
   Serial.print("make_buzz");
   do {
     finished = sing(button);
-    //pushed = digitalRead(button1);
-    //int current_time = displayTime();
-    //check_timers(current_time, 1);
   } while (finished == 0);
-  //analogWrite(ledPin, 0);
+
   return;
 }
 
@@ -453,11 +416,11 @@ int sing(int s) {
     Serial.println(" 'Underworld Theme'");
     int size = sizeof(underworld_melody) / sizeof(int);
     for (int thisNote = 0; thisNote < size; thisNote++) {
-      if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH || digitalRead(button3) == HIGH){
+      if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH || digitalRead(button3) == HIGH) {
         Serial.println("stopped alarm");
-        return 1; 
+        return 1;
       }
-    
+
       // to calculate the note duration, take one second
       // divided by the note type.
       //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
@@ -480,9 +443,9 @@ int sing(int s) {
     Serial.println(" 'Mario Theme'");
     int size = sizeof(melody) / sizeof(int);
     for (int thisNote = 0; thisNote < size; thisNote++) {
-       if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH || digitalRead(button3) == HIGH){
+      if (digitalRead(button1) == HIGH || digitalRead(button2) == HIGH || digitalRead(button3) == HIGH) {
         Serial.println("stopped alarm");
-        return 1; 
+        return 1;
       }
 
       // to calculate the note duration, take one second
@@ -525,110 +488,67 @@ void buzz(int targetPin, long frequency, long length) {
 void loop()
 {
   int current_time = displayTime();
-  do{
+  do {
     current_time = displayTime();
     button_pushed = check_button();
-    //button2_pushed = digitalRead(button2);
-    //button3_pushed = digitalRead(button3);
-    //button4_pushed = digitalRead(button4);
-    check_timers(current_time, timer_start1+timer1, timer_start2+timer2, timer_start3+timer3);
+    check_timers(current_time, timer_start1 + timer1, timer_start2 + timer2, timer_start3 + timer3);
     Serial.print("current time: ");
     Serial.println(current_time);
-    Serial.println(timer_start1);
     Serial.println(button_pushed);
-    //Serial.print(button1_pushed);
-    //Serial.print(current_time);
-    //current_time = displayTime();
-    //Serial.print("\n");
-    
-  //} while(button1_pushed == LOW && button2_pushed == LOW && button3_pushed == LOW && button4_pushed == LOW)//no button pushes
-  } while(button_pushed == 0);//no button pushes
+  } while (button_pushed == 0); //no button pushes
 
-  
-
-  if (button_pushed == 1){
+  if (button_pushed == 1) {
     Serial.print("button1 pushed");
-    if (timer_start1 == 0 && current_time != 0){//not started yet
+    if (timer_start1 == 0 && current_time != 0) { //not started yet
       Serial.print("Timer 1 Started\n");
-      color(255,0,0); //RED
-      timer_start1 = current_time; 
+      color(255, 0, 0); //RED
+      timer_start1 = current_time;
     }
     else if (timer_start1 == 0 && current_time == 0) {//midnight and started
       Serial.print("Timer 1 Started Midnight \n");
-      color(255,0,0);
+      color(255, 0, 0);
       timer_start1 = current_time;
     }
-    else{
+    else {
       Serial.print("Timer 1 Stopped\n");
-      color(0,0,0);
-      timer_start1 =0;   //stop alarm
+      color(0, 0, 0);
+      timer_start1 = 0;  //stop alarm
     }
   }
-  if (button_pushed == 2){
+  if (button_pushed == 2) {
     Serial.print("button2 pushed");
-    if (timer_start2 == 0 && current_time != 0){//not started yet
+    if (timer_start2 == 0 && current_time != 0) { //not started yet
       Serial.print("Timer 2 Started\n");
-      color(0,0,255); //Blue
-      timer_start2 = current_time; 
+      color(0, 0, 255); //Blue
+      timer_start2 = current_time;
     }
     else if (timer_start2 == 0 && current_time == 0) {//midnight and started
       Serial.print("Timer 2 Started Midnight \n");
-      color(0,0,255);
+      color(0, 0, 255);
       timer_start2 = current_time;
     }
-    else{
+    else {
       Serial.print("Timer 2 Stopped\n");
-      color(0,0,0);
-      timer_start2 =0;   //stop alarm
+      color(0, 0, 0);
+      timer_start2 = 0;  //stop alarm
     }
   }
-  if (button_pushed == 3){
+  if (button_pushed == 3) {
     Serial.print("button3 pushed");
-    if (timer_start3 == 0 && current_time != 0){//not started yet
+    if (timer_start3 == 0 && current_time != 0) { //not started yet
       Serial.print("Timer 3 Started\n");
-      color(255,255,255); //White
-      timer_start3 = current_time; 
+      color(255, 255, 255); //White
+      timer_start3 = current_time;
     }
     else if (timer_start3 == 0 && current_time == 0) {//midnight and started
       Serial.print("Timer 3 Started Midnight \n");
-      color(255,255,255);
+      color(255, 255, 255);
       timer_start3 = current_time;
     }
-    else{
+    else {
       Serial.print("Timer 3 Stopped\n");
-      color(0,0,0);
-      timer_start3 =0;   //stop alarm
+      color(0, 0, 0);
+      timer_start3 = 0;  //stop alarm
     }
   }
-  /*
-  else if (button2_pushed == HIGH){
-     current_time = get_time();
-    if (timer_start2 == 0){/  /not started yet
-      timer_start2 = current_time; 
-    }
-    else{
-      cancel_timer(2);   //stop alarm
-    }
-  }
-  else if (button3_pushed == HIGH){
-    current_time = get_time();
-    if (timer_start3 == 0){/  /not started yet
-      timer_start3 = current_time; 
-    }
-    else{
-      cancel_timer(3);   //stop alarm
-    }
-  }
-  else if (button4_pushed == HIGH){
-    current_time = get_time();
-    if (timer_start4 == 0){/  /not started yet
-      timer_start4 = current_time; 
-    }
-    else{
-      cancel_timer(4);   //stop alarm
-    }
-  }
-  */
-
- 
 }
