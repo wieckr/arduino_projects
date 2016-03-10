@@ -21,21 +21,22 @@ byte bcdToDec(byte val)
   return( (val/16*10) + (val%16) );
 }
 
-const int button1 = 3;   //Washer
+const int button1 = 3;   //Washer Red 
 //const int buttonPin = 3;
-const int button2 = 8;   //Dryer
-const int button3 = 7;   //Dishwasher
+const int button2 = 8;   //Dryer Blue
+const int button3 = 7;   //Dishwasher White 
 //const int button4 = 6;   //1 hour timer
 
-const int timer1 = 2; //2 mins
-const int timer2 = 2; 
-const int timer3 = 2;
+//These are the time thresholds
+const int timer1 = 77; //dryer
+const int timer2 = 40; //washer
+const int timer3 = 10;
 //const int timer4 = 60;
 
 const int buzzPin = 12;  //buzzer is plugged in here
 
-const int LEDRED = 11;
-const int LEDBLUE = 9;
+const int LEDRED = 9;
+const int LEDBLUE = 11;
 const int LEDGREEN = 10;
 
 
@@ -448,7 +449,7 @@ int song = 0;
 int sing(int s) {
   // iterate over the notes of the melody:
   song = s;
-  if (song == 2) {
+  if (song == 1) {
     Serial.println(" 'Underworld Theme'");
     int size = sizeof(underworld_melody) / sizeof(int);
     for (int thisNote = 0; thisNote < size; thisNote++) {
