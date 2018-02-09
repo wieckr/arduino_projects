@@ -1,5 +1,5 @@
 #!/usr/bin/python -OO
-# Copyright 2017 Rob Wieck
+# Copyright 2018 Rob Wieck
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,10 +16,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # This program will read from a Google Calendar to determine if the light action should be on.
-# Any Agenda item (one, or two, or more) during the current time (using the google freebusy API)will mean "lights on".
-# No Agenda item means "lights off"
+# Any Agenda item (one, or two, or more) during the current time (using the google freebusy API) will mean "lights on".
 
-
+#INSTALLATION
+# 1) pip install --upgrade google-api-python-client
+# 2) follow the instructions to setup the client_secret (step 1) at https://developers.google.com/google-apps/calendar/quickstart/python
+# 3) setup crontab to run the script every minute
+# 4) if using arduino, use the code to load to the arduino
 
 from __future__ import print_function
 import httplib2
@@ -39,21 +42,27 @@ except ImportError:
     flags = None
 from time import gmtime, strftime
 
-#if you are using an arduino over serial to control the light function, keep this, otherwise enable the GPIO functions
-import serial
-arduinoSerialData = serial.Serial('/dev/ttyUSB0', 9600)
-#import RPi.GPIO as GPIO
-#GPIOPIN = 19
+LEDMODE = 'arduino' #change to 'gpio' if using rpi's GPIO ports
+
+#if you are using an arduino over serial to control the light function, keep this, otherwise enable the GPIO functions for 3 separate red, blue and yellow LEDs
+if (LEDMODE == 'arduino'):
+    import serial
+    arduinoSerialData = serial.Serial('/dev/ttyUSB0', 9600)
+else:
+    import RPi.GPIO as GPIO
+    YELLOWPIN = 13
+    BLUEPIN = 19
+    REDPIN = 26
+
 
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/calendar-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
 CLIENT_SECRET_FILE = 'client_secret.json'
-APPLICATION_NAME = 'Google Calendar API Python Quickstart'
-NOW = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-ONEHOUR = (datetime.datetime.utcnow() + timedelta(hours=1)).isoformat() + 'Z'
+APPLICATION_NAME = 'Google Calendar API Python Light Control'
 
+NOW = datetime.datetime.utcnow() - timedelta(minutes=1) #the google freebusy api needs to have 2 times, so NOW is really a minute ago
 
 def get_credentials():
     """Gets valid user credentials from storage.
@@ -88,102 +97,131 @@ def get_upcoming_events():
     Creates a Google Calendar API service object and outputs a list of the next
     10 events on the user's calendar.
     """
+    now = NOW.isoformat() + 'Z'
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
     
     print('Getting the upcoming 10 events')
     eventsResult = service.events().list(
-        calendarId='primary', timeMin=NOW, maxResults=10, singleEvents=True,
+        calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
         orderBy='startTime').execute()
     events = eventsResult.get('items', [])
     all_event_info = {}
-
-
 
     if not events:
         print('No upcoming events found.')
         return (false)
     for event in events:
         start = event['start'].get('dateTime', event['start'].get('date'))
-
         all_event_info[start] = event['summary']
-        #all_event_info.append(event['summary'])
-        #print(start, event['summary'])
     all_event_info_sorted = collections.OrderedDict(sorted(all_event_info.items()))
     return (all_event_info_sorted)
     
 
 def main():
-    """Shows basic usage of the Google Calendar API.
-
+    """
     Creates a Google Calendar API service object and outputs a list of the next
     10 events on the user's calendar.
     """
+    oneMin = (NOW + timedelta(minutes=1)).isoformat() + 'Z'
+    twoMin = (NOW + timedelta(minutes=2)).isoformat() + 'Z'
+    tenMin = (NOW + timedelta(minutes=10)).isoformat() + 'Z'
+    now = NOW.isoformat() + 'Z'
+    
     upcoming_events = get_upcoming_events()
     for times, events in upcoming_events.iteritems():
         print (times, '\t\t' ,events)
+    """
+    Uses the freebusy API to determine if your calendar has a current item (or one within 10 mins from now)
+    """
     
     print('Checking if busy')
+    if (LEDMODE == 'gpio'):
+        setupPins()
+    busyNow = checkIfBusy(now, oneMin)
+    busyTen = checkIfBusy(now, tenMin)
+    busyOne = checkIfBusy(now, twoMin)
+    if (busyNow == True):
+        turnLightsOn()
+    elif ((busyTen == True) and (busyOne == False)): #10 min warning
+        turnEarlyWarning()
+    elif (busyOne == True): #1 min warning
+        turnLateWarning()
+    else:
+        turnLightsOff()
+
+
+
+def checkIfBusy(start,end):
     body = {
-        "timeMin": NOW,
-        "timeMax": ONEHOUR,
+        "timeMin": start,
+        "timeMax": end,
         "timezone": 'US/Central',
-        "items": [{"id": 'rwieck@nd.edu'}]
+        "items": [{"id": 'youremail@gmail.com'}]  #replace with the calendar email address
     }
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
     eventsBusy = service.freebusy().query(body=body).execute()
     cal_dict = eventsBusy[u'calendars']
-
+    print 
     for cal_name in cal_dict:
         cal_busy = cal_dict[cal_name]
         for cal_busy_name in cal_busy:
             times = cal_busy[cal_busy_name]
             if times == []:
-                print ("Horray! No Meetings!")
+                print ("Horray! No Meetings!")            
                 turnLightsOff()
+                return False
             else:
-                print ("Dangit, a meeting is happening!")
-                turnLightsOn()
+                print ("Dangit, a meeting is happening!")                
                 for endpoints in times:
                     start_busy = endpoints[u'start']
                     end_busy = endpoints[u'end']
                     print ("I am done being busy at:", end_busy)
-                    
-                    
-def turnLightsOn():
+                return True
 
-
-  	#GPIO.setmode(GPIO.BCM) # Needed in GPIO version 0.3.1
-  	#GPIO.setup(GPIOPIN, GPIO.OUT)
-  	#print("Turn it on: press button ...")
- 	#GPIO.output(GPIOPIN, True)
-
-  	#import time
- 	#time.sleep(1)
-
-  	#print("... and release button.")
- 	#GPIO.output(19, False)
+def turnEarlyWarning():
+        if (LEDMODE == 'arduino'):
+            arduinoSerialData.write('2')
+        else:        
+            GPIO.output(BLUEPIN, GPIO.LOW)
+            GPIO.output(YELLOWPIN, GPIO.HIGH)
+            GPIO.output(REDPIN, GPIO.LOW)
         
-        arduinoSerialData.write('1')
+def turnLateWarning():
+        if (LEDMODE == 'arduino'):
+            arduinoSerialData.write('3')
+        else:
+            GPIO.output(BLUEPIN, GPIO.LOW)
+            GPIO.output(YELLOWPIN, GPIO.LOW)
+            GPIO.output(REDPIN, GPIO.HIGH)
+        
+def turnLightsOn():
+        if (LEDMODE == 'arduino'):
+            arduinoSerialData.write('1')
+        else:
+            GPIO.output(BLUEPIN, GPIO.HIGH)
+            GPIO.output(YELLOWPIN, GPIO.LOW)
+            GPIO.output(REDPIN, GPIO.LOW)
 
 def turnLightsOff():
+        if (LEDMODE == 'arduino'):
+            arduinoSerialData.write('0')
+        else:
+            GPIO.output(BLUEPIN, GPIO.LOW)
+            GPIO.output(YELLOWPIN, GPIO.LOW)
+            GPIO.output(REDPIN, GPIO.LOW)
 
-        arduinoSerialData.write('0')
-  	#GPIO.setmode(GPIO.BCM)
- 	#GPIO.setup(GPIOPIN, GPIO.OUT)
+def setupPins():
+      	GPIO.setmode(GPIO.BCM) # Needed in GPIO version 0.3.1
+        GPIO.setwarnings(False)
+  	GPIO.setup(BLUEPIN, GPIO.OUT)
+ 	GPIO.setup(REDPIN, GPIO.OUT)
+ 	GPIO.setup(YELLOWPIN, GPIO.OUT)
 
-  	#print("Turn it off: press Off button ...")
- 	#GPIO.output(19, True)
-
-  	#import time
- 	#time.sleep(1)
-
-  	#print("... and release button.")
- 	#GPIO.output(GPIOPIN, False)
-
+ 	
 '''
 import os, sys
 
