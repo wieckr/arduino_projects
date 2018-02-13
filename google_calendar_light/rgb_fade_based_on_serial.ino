@@ -3,12 +3,13 @@
 // public domain, enjoy!
  
 #define REDPIN 3
-#define GREENPIN 6
-#define BLUEPIN 5
+#define GREENPIN 5
+#define BLUEPIN 6
 
-#define FADESPEED 50     // make this higher to slow down
+#define FADESPEED 40     // make this higher to slow down
 
-int status;
+int status; 
+int r, g, b;
 
 void setup() {
   pinMode(REDPIN, OUTPUT);
@@ -26,10 +27,8 @@ void loop() {
     status = Serial.read() - '0';
   }
   
-  if (status != 0) { //on
-  int r, g, b;
-  
- 
+  if (status == 1) { //fading colors
+   
   // fade from blue to violet
   for (r = 0; r < 256; r++) { 
     analogWrite(REDPIN, r);
@@ -61,10 +60,27 @@ void loop() {
     delay(FADESPEED);
   } 
 }
-
-   else { //led should be off
+  else if (status == 2) { //yellow breathe
+    float val = (exp(sin(millis()/2000.0*PI)) - 0.36787944)*108.0;
+    analogWrite(REDPIN, val);
+    analogWrite(GREENPIN, val);
+    analogWrite(BLUEPIN, 0);
+  }
+    else if (status == 3) { //red breathe
+    float val = (exp(sin(millis()/500.0*PI)) - 0.36787944)*108.0;
+    analogWrite(REDPIN, val);
+    analogWrite(GREENPIN, 0);
+    analogWrite(BLUEPIN, 0);
+  }
+    else if (status == 4) { //testing breathe
+    float val = (exp(sin(millis()/500.0*PI)) - 0.36787944)*108.0;
+    analogWrite(REDPIN, val);
+    analogWrite(GREENPIN, 0);
+    analogWrite(BLUEPIN, val);
+   } 
+  else { //led should be off
     analogWrite(GREENPIN,0);
     analogWrite(BLUEPIN, 0);
     analogWrite(REDPIN, 0);
-   }
+  }
 }
